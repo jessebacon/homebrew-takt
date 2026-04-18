@@ -88,7 +88,7 @@ class TaktCli < Formula
   homepage "https://github.com/jessebacon/takt"
   url "https://github.com/jessebacon/takt/releases/download/v0.1.0/takt-v0.1.0-macos-universal.tar.gz",
       using: GitHubPrivateRepositoryReleaseDownloadStrategy
-  sha256 "fe0fe1d62696b8b6f553e56c9f9f81f4d51568ca07e392a45e641cf532c0ebd6"
+  sha256 "681a44b32591ae2ebb834cc6d6e1ffd42955390cda7d572615815c1a8412760d"
   version "0.1.0"
   license "MIT"
 
