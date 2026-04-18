@@ -13,22 +13,82 @@
 #   3. Commit and push. Users run `brew upgrade takt-cli`.
 #
 # First-time install for users:
-#   export HOMEBREW_GITHUB_API_TOKEN=<a PAT with `repo` scope>
+#   export HOMEBREW_GITHUB_API_TOKEN=<a PAT with `repo` scope or a
+#       fine-grained PAT with Contents: Read-only on the takt repo>
 #   brew tap jessebacon/takt
 #   brew install takt-cli
 #
 # The token is required because the `takt` source repo is private but this
-# tap is public. The `GitHubPrivateRepositoryReleaseDownloadStrategy` helper
-# reads `HOMEBREW_GITHUB_API_TOKEN` and uses it to download the release asset.
+# tap is public. The custom download strategy below reads
+# `HOMEBREW_GITHUB_API_TOKEN` and uses it to authenticate against the
+# GitHub API when fetching the release asset.
 
 require "download_strategy"
+
+# Inline download strategy for private GitHub release assets.
+#
+# Homebrew used to ship this as a built-in, but it was removed — formulas
+# that need it must define it locally. Downloads the release asset via the
+# GitHub API (`/repos/:owner/:repo/releases/assets/:id`) using the caller's
+# HOMEBREW_GITHUB_API_TOKEN for auth.
+class GitHubPrivateRepositoryReleaseDownloadStrategy < CurlDownloadStrategy
+  URL_PATTERN = %r{^https://github\.com/([^/]+)/([^/]+)/releases/download/([^/]+)/(\S+)$}
+
+  def initialize(url, name, version, **meta)
+    super
+    parse_url_pattern
+    set_github_token
+  end
+
+  def parse_url_pattern
+    match = @url.match(URL_PATTERN)
+    raise CurlDownloadStrategyError, "Invalid GitHub release URL: #{@url}" unless match
+
+    _, @owner, @repo, @tag, @filename = *match
+  end
+
+  def set_github_token
+    @github_token = ENV["HOMEBREW_GITHUB_API_TOKEN"]
+    return if @github_token && !@github_token.empty?
+
+    raise CurlDownloadStrategyError,
+          "HOMEBREW_GITHUB_API_TOKEN must be set to install from a private GitHub repo."
+  end
+
+  def _fetch(url:, resolved_url:, timeout:)
+    asset_url = "https://api.github.com/repos/#{@owner}/#{@repo}/releases/assets/#{asset_id}"
+    curl_download asset_url,
+                  "--header", "Accept: application/octet-stream",
+                  "--header", "Authorization: token #{@github_token}",
+                  to: temporary_path,
+                  timeout: timeout
+  end
+
+  private
+
+  def asset_id
+    release_url = "https://api.github.com/repos/#{@owner}/#{@repo}/releases/tags/#{@tag}"
+    headers = [
+      "--header", "Accept: application/vnd.github+json",
+      "--header", "Authorization: token #{@github_token}",
+    ]
+    output, _, status = curl_output(*headers, release_url)
+    raise CurlDownloadStrategyError, "Failed to fetch release metadata for #{@tag}" unless status.success?
+
+    release = JSON.parse(output)
+    asset = release["assets"]&.find { |a| a["name"] == @filename }
+    raise CurlDownloadStrategyError, "Release asset #{@filename} not found in #{@tag}" unless asset
+
+    asset["id"]
+  end
+end
 
 class TaktCli < Formula
   desc "AI-powered development orchestration"
   homepage "https://github.com/jessebacon/takt"
   url "https://github.com/jessebacon/takt/releases/download/v0.1.0/takt-v0.1.0-macos-universal.tar.gz",
       using: GitHubPrivateRepositoryReleaseDownloadStrategy
-  sha256 "fe0fe1d62696b8b6f553e56c9f9f81f4d51568ca07e392a45e641cf532c0ebd6"
+  sha256 "REPLACE_WITH_SHA_FROM_RELEASE_WORKFLOW"
   version "0.1.0"
   license "MIT"
 
@@ -71,7 +131,8 @@ class TaktCli < Formula
         LINEAR_API_KEY=lin_api_...   # only if using Linear integration
 
       This tap pulls release assets from a private GitHub repo. You must
-      export HOMEBREW_GITHUB_API_TOKEN (a PAT with `repo` scope) before
+      export HOMEBREW_GITHUB_API_TOKEN (a PAT with `repo` scope, or a
+      fine-grained PAT with Contents: Read-only on the takt repo) before
       running `brew install` or `brew upgrade`.
     EOS
   end
