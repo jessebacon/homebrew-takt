@@ -1,16 +1,21 @@
 # Starter formula for the private `takt` repo distributed via a public
 # `homebrew-takt` tap.
 #
+# Note: the formula is named `takt-cli` (not `takt`) because `takt` is
+# already taken in homebrew-core by a music-programming language, and
+# homebrew-core always wins over personal taps. The installed binary is
+# still `takt` — only the `brew install` command differs.
+#
 # Usage:
-#   1. Copy this file into your tap repo at `Formula/takt.rb`.
+#   1. Copy this file into your tap repo at `Formula/takt-cli.rb`.
 #   2. On every release, bump `version`, `url`, and `sha256` (the release
 #      workflow prints the exact snippet to paste).
-#   3. Commit and push. Users run `brew upgrade takt`.
+#   3. Commit and push. Users run `brew upgrade takt-cli`.
 #
 # First-time install for users:
 #   export HOMEBREW_GITHUB_API_TOKEN=<a PAT with `repo` scope>
 #   brew tap jessebacon/takt
-#   brew install takt
+#   brew install takt-cli
 #
 # The token is required because the `takt` source repo is private but this
 # tap is public. The `GitHubPrivateRepositoryReleaseDownloadStrategy` helper
@@ -18,7 +23,7 @@
 
 require "download_strategy"
 
-class Takt < Formula
+class TaktCli < Formula
   desc "AI-powered development orchestration"
   homepage "https://github.com/jessebacon/takt"
   url "https://github.com/jessebacon/takt/releases/download/v0.1.0/takt-v0.1.0-macos-universal.tar.gz",
