@@ -105,13 +105,17 @@ class TaktCli < Formula
     libexec.install "takt_agent.py"
     libexec.install "requirements.txt"
 
-    # Wrapper in bin/ sets the sidecar + requirements paths so the installed
-    # binary doesn't rely on compile-time CARGO_MANIFEST_DIR, which points
-    # to the build machine.
+    # Pre-built documentation site (served by `takt docs`).
+    libexec.install "docs"
+
+    # Wrapper in bin/ sets the sidecar, requirements, and docs paths so the
+    # installed binary doesn't rely on compile-time CARGO_MANIFEST_DIR,
+    # which points to the build machine.
     (bin/"takt").write <<~SH
       #!/bin/bash
       export TAKT_AGENT_SIDECAR="#{libexec}/takt_agent.py"
       export TAKT_AGENT_REQUIREMENTS="#{libexec}/requirements.txt"
+      export TAKT_DOCS_DIR="#{libexec}/docs"
       exec "#{libexec}/takt-bin" "$@"
     SH
     (bin/"takt").chmod 0755
