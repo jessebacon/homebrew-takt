@@ -86,10 +86,10 @@ end
 class TaktCli < Formula
   desc "AI-powered development orchestration"
   homepage "https://github.com/jessebacon/takt"
-  url "https://github.com/jessebacon/takt/releases/download/v0.1.1/takt-v0.1.1-macos-universal.tar.gz",
+  url "https://github.com/jessebacon/takt/releases/download/v0.1.2/takt-v0.1.2-macos-universal.tar.gz",
       using: GitHubPrivateRepositoryReleaseDownloadStrategy
-  sha256 "1657974f775a50e312748cefe46048f40b2f65f208adab31a739c498b7b09319"
-  version "0.1.1"
+  sha256 "55a34b06c24e29e594a52a50682add0f44ed0fefbf1286adb9836740533dba00"
+  version "0.1.2"
   license "MIT"
 
   # The Rust binary is self-contained. Python is only needed for the agent
